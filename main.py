@@ -1,13 +1,16 @@
 import streamlit as st
 
-from utils import get_chat_response
+from utils import DEFAULT_PROVIDER, PROVIDER_CONFIG, get_chat_response, get_provider_settings
 
 st.set_page_config(page_title="可乐的聊天室", page_icon="💬")
 
 st.title("💬 可乐的聊天室")
 with st.sidebar:
-    openai_api_key = st.text_input("请输入您的 DeepSeek API key：", type="password")
-    st.markdown("[获取 DeepSeek API key](https://platform.deepseek.com)")
+    provider = st.selectbox("选择模型提供方", options=list(PROVIDER_CONFIG.keys()), index=0)
+    provider_settings = get_provider_settings(provider)
+    openai_api_key = st.text_input(f"请输入您的 {provider} API key：", type="password")
+    st.markdown(f"[获取 {provider} API key]({provider_settings['key_url']})")
+    st.caption(f"默认模型：`{provider_settings['model']}`")
 
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
@@ -33,11 +36,12 @@ if prompt:
             response = get_chat_response(
                 openai_api_key.strip(),
                 st.session_state["messages"],
+                provider=provider or DEFAULT_PROVIDER,
             )
         except Exception as e:
             response = (
                 f"调用失败：{e}\n\n"
-                "请检查：1) API Key 是否正确  2) 网络能否访问 api.deepseek.com"
+                "请检查：1) API Key 是否正确  2) 网络能否访问对应平台的 API 域名"
             )
 
     st.session_state["messages"].append({"role": "ai", "content": response})
